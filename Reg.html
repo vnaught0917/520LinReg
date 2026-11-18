@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Regression in relation to Student Performance	</title>
+	<script src="https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/ort.min.js"></script>
+<style>
+	table, th, td {border: 1px solid;}
+	#leftbox{float: left; width: 60%; height: 300px;}
+	#boxes1:after{content: ""; display: block; clear: both}
+	#predictions1{float: right; width: 35%;}
+</style>
+</head>
+<body>
+<h1>Regression in relation to Student Performance</h1>
+<div id = "boxes1">
+	<div id="leftbox">
+		<h2>Input Data</h2>
+		<input type="text" id="box0c1" value="">Hours Studied (Integer)<br/>
+		<input type="text" id="box1c1" value="">Previous Score (Integer)<br/>
+		<label>Extracurricular Activities</label>
+		<select id="box2c1">
+    			<option value="1">Yes</option>
+    			<option value="0">No</option>
+		</select><br/>
+		<input type="text" id="box3c1" value="">Sleep Hours (Integer)<br/>
+		<input type="text" id="box4c1" value="">Homework Sheets Practiced (Integer)<br/>
+		<div><input type="button" value="Run" onclick="runExample1()"/></div>
+	</div>
+	<div id = "predictions1">
+	</div>
+</div>
+		
+<main>
+</main>
+<script>
+
+let session;
+
+async function runExample1() {
+
+    const x = new Float32Array(5);
+
+    for (let i = 0; i < 5; i++) {
+
+        let id = 'box' + i + 'c1';
+        let element = document.getElementById(id);
+
+        if (element == null) {
+            console.error("Could not find HTML element:", id);
+            alert("Missing HTML element: " + id);
+            return;
+        }
+
+        let value = parseFloat(element.value);
+
+        if (isNaN(value)) {
+            alert("Please enter a valid number for all input fields.");
+            return;
+        }
+
+        x[i] = value;
+    }
+
+    try {
+
+        if (!session) {
+            session = await ort.InferenceSession.create(
+                "ONNXmodels/LinPlusReg.onnx"
+            );
+        }
+
+        const tensorX = new ort.Tensor('float32', x, [1, 5]);
+
+        const inputName = session.inputNames[0];
+        const outputName = session.outputNames[0];
+
+        const results = await session.run({
+            [inputName]: tensorX
+        });
+
+        const output = results[outputName].data;
+
+        const predictions = document.getElementById('predictions1');
+
+        predictions.innerHTML = `
+            <hr>
+            <h2>Prediction</h2>
+            <p>Performance Index: ${output[0].toFixed(2)}</p>
+        `;
+
+    } catch (e) {
+
+        console.error("ONNX runtime error:", e);
+        alert("Error: " + e.message);
+
+    }
+}
+
+</script>
+</body>
+</html>
